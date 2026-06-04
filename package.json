@@ -1,0 +1,51 @@
+{
+  "name": "@seomi/ssh",
+  "version": "0.1.1",
+  "description": "One-command CLI installer that sets up passwordless SSH access for AI agents in any project (dev/prod/custom servers) and writes the access map into AGENTS.md / CLAUDE.md.",
+  "type": "module",
+  "bin": {
+    "seomi-ssh": "bin/seomi-ssh.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "skills",
+    "templates",
+    "README.md",
+    "README.ru.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.0.0"
+  },
+  "keywords": [
+    "ssh",
+    "ai-agent",
+    "claude",
+    "ai-factory",
+    "seomi",
+    "cli",
+    "deploy"
+  ],
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mikeekb/seomi-ssh.git"
+  },
+  "homepage": "https://github.com/Mikeekb/seomi-ssh#readme",
+  "bugs": {
+    "url": "https://github.com/Mikeekb/seomi-ssh/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "directories": {
+    "test": "test"
+  }
+}
