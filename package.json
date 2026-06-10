@@ -1,6 +1,6 @@
 {
   "name": "@seomi/ssh",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "One-command CLI installer that sets up passwordless SSH access for AI agents in any project (dev/prod/custom servers) and writes the access map into AGENTS.md / CLAUDE.md.",
   "type": "module",
   "bin": {
