@@ -15,13 +15,14 @@
  */
 
 import { mkdir, copyFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { logger } from '../lib/logger.mjs';
 import { promptServers, toEnvUpdates } from '../lib/server-prompt.mjs';
 import { mergeEnv } from '../lib/env-writer.mjs';
 import { ensureSshKey } from '../lib/ssh-key-setup.mjs';
-import { detectAgentMdTargets } from '../lib/agent-md-target.mjs';
+import { detectAgentMdTargets, ensureClaudeImportStub, isClaudeImportStub } from '../lib/agent-md-target.mjs';
 import { renderAgentMdBlock } from '../lib/agent-md-renderer.mjs';
 import { insertOrUpdate } from '../lib/markers.mjs';
 
@@ -117,6 +118,10 @@ export async function initCommand( options = {} ) {
 	if ( dryRun ) {
 		const { targets } = await detectAgentMdTargets( { cwd, interactive: false } );
 		logger.info( `[dry-run] managed-блок был бы записан в: ${ targets.join( ', ' ) || '(none)' }` );
+		const wouldStub = targets.some( ( f ) => f.endsWith( 'AGENTS.md' ) ) && ! existsSync( join( cwd, 'CLAUDE.md' ) );
+		if ( wouldStub ) {
+			logger.info( '[dry-run] был бы создан CLAUDE.md с импортом @AGENTS.md (Claude Code не читает AGENTS.md)' );
+		}
 		process.stdout.write( '\n--- managed block preview ---\n' + block + '--- end preview ---\n' );
 	} else {
 		const { targets } = await detectAgentMdTargets( {
@@ -128,8 +133,25 @@ export async function initCommand( options = {} ) {
 			logger.warn( 'Целевой файл инструкций не выбран — managed-блок не записан.' );
 		}
 		for ( const file of targets ) {
+			const name = file.split( /[\\/]/ ).pop();
+			// CLAUDE.md, который лишь импортирует AGENTS.md, — это редирект, а не
+			// носитель блока: писать в него блок значит снова продублировать
+			// контент. Оставляем его чистым импортом `@AGENTS.md`.
+			if ( name === 'CLAUDE.md' && isClaudeImportStub( file ) ) {
+				logger.info( `${ name }: оставлен как импорт @AGENTS.md (блок живёт в AGENTS.md)` );
+				continue;
+			}
 			const res = await insertOrUpdate( file, block, { namespace: MARKER_NS } );
 			logger.success( `${ res.action }: ${ file }` );
+		}
+		// Claude Code не читает AGENTS.md — если блок лёг туда и CLAUDE.md нет,
+		// создаём однострочный CLAUDE.md с импортом, чтобы Claude Code видел те
+		// же инструкции (включая доступы по SSH).
+		if ( targets.length > 0 ) {
+			const stub = await ensureClaudeImportStub( { cwd } );
+			if ( stub.created ) {
+				logger.success( 'Создан CLAUDE.md (импорт @AGENTS.md) — Claude Code теперь читает AGENTS.md' );
+			}
 		}
 	}
 
